@@ -3,6 +3,7 @@ package command
 import (
 	"os"
 
+	"github.com/renevo/zombieutils/internal/command/zombie"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -43,7 +44,9 @@ func Execute(args []string) error {
 	rootCommand.PersistentFlags().BoolVar(&nocolorLogging, "no-color", false, "disable colorized output")
 
 	// add commands here:
-	//rootCommand.AddCommand()
+	rootCommand.AddCommand(
+		zombie.New(),
+	)
 
 	// execute
 	rootCommand.SetArgs(args)
