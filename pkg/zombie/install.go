@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,14 +30,52 @@ func (s *Server) Install(ctx context.Context) error {
 		return errors.Wrapf(err, "failed to install zombie game to %q", s.Path)
 	}
 
+	// install admin config
+	if err := s.installAdminConfig(); err != nil {
+		return errors.Wrapf(err, "failed to install admin.xml to %q", s.SaveFolder)
+	}
+
 	// install alloc mods
-	if err := s.installAllocMods(ctx); err != nil {
-		return errors.Wrapf(err, "failed to install alloc mods: %q", s.FixesVersion)
+	if len(s.FixesVersion) > 0 {
+		if err := s.installAllocMods(ctx); err != nil {
+			return errors.Wrapf(err, "failed to install alloc mods: %q", s.FixesVersion)
+		}
 	}
 
 	// TODO: other mods from places, these are pretty non-standard in the zip files provided to download, but most are git repositories
 
 	return nil
+}
+
+func (s *Server) installAdminConfig() error {
+	realPath, _ := filepath.Abs(filepath.FromSlash(s.SaveFolder))
+	if err := os.MkdirAll(realPath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "failed to create save folder %q", realPath)
+	}
+
+	adminConfig := struct {
+		XMLName     xml.Name               `xml:"adminTools"`
+		Admins      []ServerAdmin          `xml:"admins>user"`
+		Permissions []ServerPermission     `xml:"permissions>permission"`
+		Whitelist   []ServerWhitelistEntry `xml:"whitelist>user"`
+	}{
+		Admins:      s.Admins,
+		Permissions: s.Permissions,
+		Whitelist:   s.Whitelist,
+	}
+
+	data, err := xml.MarshalIndent(&adminConfig, "", "  ")
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal %q", s.AdminFileName)
+	}
+
+	data = append([]byte(xml.Header), data...)
+
+	// gross...
+	data = []byte(strings.ReplaceAll(string(data), "></user>", " />"))
+	data = []byte(strings.ReplaceAll(string(data), "></permission>", " />"))
+
+	return errors.Wrapf(os.WriteFile(filepath.Join(realPath, s.AdminFileName), data, os.ModePerm), "failed to write %q to %q", s.AdminFileName, realPath)
 }
 
 func (s *Server) installAllocMods(ctx context.Context) error {
@@ -95,5 +134,31 @@ func (s *Server) installAllocMods(ctx context.Context) error {
 		logrus.Debugf("Installed File: %q; Size: %d\n", realPath, cur.Size)
 	}
 
-	return nil
+	// now do the web permissions file
+	savePath, _ := filepath.Abs(filepath.FromSlash(s.SaveFolder))
+	if err := os.MkdirAll(savePath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "failed to create save folder %q", savePath)
+	}
+
+	webConfig := struct {
+		XMLName     xml.Name              `xml:"webpermissions"`
+		AdminTokens []ServerWebToken      `xml:"admintokens>token"`
+		Permissions []ServerWebPermission `xml:"permissions>permission"`
+	}{
+		Permissions: s.WebPermissions,
+		AdminTokens: s.WebTokens,
+	}
+
+	data, err := xml.MarshalIndent(&webConfig, "", "  ")
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal webpermissions.xml")
+	}
+
+	data = append([]byte(xml.Header), data...)
+
+	// gross...
+	data = []byte(strings.ReplaceAll(string(data), "></token>", " />"))
+	data = []byte(strings.ReplaceAll(string(data), "></permission>", " />"))
+
+	return errors.Wrapf(os.WriteFile(filepath.Join(savePath, "webpermissions.xml"), data, os.ModePerm), "failed to write webpermissions.xml to %q", savePath)
 }
