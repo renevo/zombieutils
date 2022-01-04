@@ -3,19 +3,21 @@ package zombie
 type Server struct {
 	Name          string `hcl:"name,label"`
 	Path          string `hcl:"path"`
-	Experimental  bool   `hcl:"experimental"`
+	Experimental  bool   `hcl:"experimental,optional"`
 	Steam         string `hcl:"steam"`
 	Config        string `hcl:"config"`
 	SaveFolder    string `hcl:"save_folder"`
-	AdminFileName string `hcl:"admin_file_name"`
+	AdminFileName string `hcl:"admin_file_name,optional"`
 
-	FixesVersion string `hcl:"server_fixes_version"`
+	FixesVersion string `hcl:"server_fixes_version,optional"`
 
 	Admins         []ServerAdmin          `hcl:"admin,block"`
 	Permissions    []ServerPermission     `hcl:"permission,block"`
 	WebPermissions []ServerWebPermission  `hcl:"webpermission,block"`
 	WebTokens      []ServerWebToken       `hcl:"webtoken,block"`
 	Whitelist      []ServerWhitelistEntry `hcl:"whitelist,block"`
+	Mods           []ServerMod            `hcl:"mod,block"`
+	CleanMods      bool                   `hcl:"clean_mods,optional"`
 }
 
 type ServerAdmin struct {

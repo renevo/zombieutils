@@ -2,6 +2,9 @@ package zombie
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/pkg/errors"
@@ -73,11 +76,21 @@ func New() *cobra.Command {
 				return err
 			}
 
-			ctx := context.Background()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
 
 			if err := srv.Install(ctx); err != nil {
 				return err
 			}
+
+			sigCh := make(chan os.Signal, 2)
+			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+			go func() {
+				<-sigCh
+				logrus.Info("Stopping server...")
+				cancel()
+			}()
 
 			return srv.Run(ctx)
 		},

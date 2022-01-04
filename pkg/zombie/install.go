@@ -26,33 +26,65 @@ func (s *Server) Install(ctx context.Context) error {
 		g.Beta = "latest_experimental"
 	}
 
-	if err := g.Install(s.Steam, s.Path); err != nil {
+	installPath, err := filepath.Abs(filepath.FromSlash(s.Path))
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve install directory %q", s.Path)
+	}
+
+	if err := os.MkdirAll(installPath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "failed to create install directory: %q", installPath)
+	}
+
+	if err := g.Install(s.Steam, installPath); err != nil {
 		return errors.Wrapf(err, "failed to install zombie game to %q", s.Path)
 	}
 
+	// mod path cleaning and creations
+	modPath := filepath.Join(installPath, "Mods")
+	if s.CleanMods {
+		logrus.Infof("Cleaning mod directory")
+		modPath := filepath.Join(installPath, "Mods")
+		if err := os.RemoveAll(modPath); err != nil {
+			return errors.Wrapf(err, "failed to clean mods folder %q", modPath)
+		}
+	}
+
+	if err := os.MkdirAll(modPath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "failed to create mod directory: %q", modPath)
+	}
+
+	// create the save path
+	savePath, err := filepath.Abs(filepath.FromSlash(s.SaveFolder))
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve save directory %q", s.SaveFolder)
+	}
+	if err := os.MkdirAll(savePath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "failed to create save directory: %q", savePath)
+	}
+
 	// install admin config
-	if err := s.installAdminConfig(); err != nil {
+	if err := s.installAdminConfig(savePath); err != nil {
 		return errors.Wrapf(err, "failed to install admin.xml to %q", s.SaveFolder)
 	}
 
-	// install alloc mods
+	// install alloc mods - this are a bit "special"
 	if len(s.FixesVersion) > 0 {
-		if err := s.installAllocMods(ctx); err != nil {
+		if err := s.installAllocMods(ctx, installPath, savePath); err != nil {
 			return errors.Wrapf(err, "failed to install alloc mods: %q", s.FixesVersion)
 		}
 	}
 
-	// TODO: other mods from places, these are pretty non-standard in the zip files provided to download, but most are git repositories
+	// install mods from places, these are pretty non-standard in the zip files provided to download, but most are git repositories
+	for _, mod := range s.Mods {
+		if err := mod.Install(ctx, modPath); err != nil {
+			logrus.Errorf("Failed to install mod %q: %v", mod.Name, err)
+		}
+	}
 
 	return nil
 }
 
-func (s *Server) installAdminConfig() error {
-	realPath, _ := filepath.Abs(filepath.FromSlash(s.SaveFolder))
-	if err := os.MkdirAll(realPath, os.ModePerm); err != nil {
-		return errors.Wrapf(err, "failed to create save folder %q", realPath)
-	}
-
+func (s *Server) installAdminConfig(savePath string) error {
 	adminConfig := struct {
 		XMLName     xml.Name               `xml:"adminTools"`
 		Admins      []ServerAdmin          `xml:"admins>user"`
@@ -75,10 +107,10 @@ func (s *Server) installAdminConfig() error {
 	data = []byte(strings.ReplaceAll(string(data), "></user>", " />"))
 	data = []byte(strings.ReplaceAll(string(data), "></permission>", " />"))
 
-	return errors.Wrapf(os.WriteFile(filepath.Join(realPath, s.AdminFileName), data, os.ModePerm), "failed to write %q to %q", s.AdminFileName, realPath)
+	return errors.Wrapf(os.WriteFile(filepath.Join(savePath, s.AdminFileName), data, os.ModePerm), "failed to write %q to %q", s.AdminFileName, savePath)
 }
 
-func (s *Server) installAllocMods(ctx context.Context) error {
+func (s *Server) installAllocMods(ctx context.Context, installPath, savePath string) error {
 	client := cleanhttp.DefaultClient()
 	fixesURL := fmt.Sprintf("http://illy.bz/fi/7dtd/server_fixes_v%s.tar.gz", strings.ReplaceAll(s.FixesVersion, ".", "_"))
 
@@ -114,8 +146,7 @@ func (s *Server) installAllocMods(ctx context.Context) error {
 			continue
 		}
 
-		realPath, _ := filepath.Abs(filepath.FromSlash(s.Path))
-		realPath = filepath.Join(realPath, cur.Name)
+		realPath := filepath.Join(installPath, cur.Name)
 
 		data, err := io.ReadAll(tr)
 		if err != nil {
@@ -135,11 +166,6 @@ func (s *Server) installAllocMods(ctx context.Context) error {
 	}
 
 	// now do the web permissions file
-	savePath, _ := filepath.Abs(filepath.FromSlash(s.SaveFolder))
-	if err := os.MkdirAll(savePath, os.ModePerm); err != nil {
-		return errors.Wrapf(err, "failed to create save folder %q", savePath)
-	}
-
 	webConfig := struct {
 		XMLName     xml.Name              `xml:"webpermissions"`
 		AdminTokens []ServerWebToken      `xml:"admintokens>token"`

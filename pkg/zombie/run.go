@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/logutil"
 	"github.com/sirupsen/logrus"
 )
@@ -32,5 +33,13 @@ func (s *Server) Run(ctx context.Context) error {
 	cmd.Stdout = logutil.Writer(logrus.Info)
 	cmd.Stderr = logutil.Writer(logrus.Error)
 
-	return cmd.Run()
+	if err := cmd.Start(); err != nil {
+		return errors.Wrapf(err, "faild to start server %q", cmd.Path)
+	}
+
+	<-ctx.Done()
+
+	_ = cmd.Process.Signal(os.Interrupt)
+
+	return cmd.Wait()
 }

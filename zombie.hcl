@@ -7,6 +7,7 @@ server "Burpcraft" {
   steam           = "/usr/games/steamcmd"
 
   server_fixes_version = "22.24.39"
+  clean_mods           = false
 
   admin "Dante" {
     id         = 76561197969618392
@@ -58,5 +59,48 @@ server "Burpcraft" {
   webtoken "CLI" {
     token = "supersecret"
     level = 0
+  }
+
+  mod "barbed-wire" {
+    url = "https://damned.cloud/files/MeanCloud__BarbedWire_v0.04.zip"
+  }
+
+  mod "bigger-backpack" {
+    url         = "https://github.com/KhaineGB/KhaineA20ModletsXML/archive/refs/heads/main.zip"
+    path_filter = "KHA20-60BBM"
+  }
+
+  mod "bigger-craft-queue" {
+    url         = "https://github.com/KhaineGB/KhaineA20ModletsXML/archive/refs/heads/main.zip"
+    path_filter = "KHA20-12CraftQueue"
+  }
+
+  mod "bigger-forge" {
+    url         = "https://github.com/KhaineGB/KhaineA20ModletsXML/archive/refs/heads/main.zip"
+    path_filter = "KHA20-3SlotForge"
+  }
+
+  mod "always-open-trader" {
+    url         = "https://github.com/KhaineGB/KhaineA20ModletsXML/archive/refs/heads/main.zip"
+    path_filter = "KHA20-AlwaysOpenTrader"
+  }
+
+  mod "lockable-inventory" {
+    url         = "https://github.com/KhaineGB/KhaineA20ModletsXML/archive/refs/heads/main.zip"
+    path_filter = "KHA20-LockableInvSlots"
+  }
+
+  mod "eggs" {
+    url         = "https://github.com/JaxTeller718/A20ModletsJax/archive/refs/heads/main.zip"
+    path_filter = "JaxTeller718-EggsInFridges"
+  }
+
+  mod "zombie-reach-limiter" {
+    url         = "https://github.com/JaxTeller718/A20ModletsJax/archive/refs/heads/main.zip"
+    path_filter = "JaxTeller718-ZombieReach"
+  }
+
+  mod "lights" {
+    url = "https://docs.google.com/uc?export=download&id=1zHMqYkwaBhlP9M0AX6KDbx_CCzyTqBv5"
   }
 }
