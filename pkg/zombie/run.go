@@ -1,11 +1,12 @@
 package zombie
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/logutil"
@@ -29,17 +30,16 @@ func (s *Server) Run(ctx context.Context) error {
 	cmd.Env = append(cmd.Env, fmt.Sprintf("LD_LIBRARY_PATH=.:%s/7DaysToDieServer_Data/Plugins/x86_64", installDirectory))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s/GameData", installDirectory))
 
-	cmd.Stdin = os.Stdin
+	stdin := bytes.Buffer{}
+
+	cmd.Stdin = &stdin
 	cmd.Stdout = logutil.Writer(logrus.Info)
 	cmd.Stderr = logutil.Writer(logrus.Error)
 
-	if err := cmd.Start(); err != nil {
-		return errors.Wrapf(err, "faild to start server %q", cmd.Path)
-	}
+	go func() {
+		<-ctx.Done()
+		_ = cmd.Process.Signal(syscall.SIGINT)
+	}()
 
-	<-ctx.Done()
-
-	_ = cmd.Process.Signal(os.Interrupt)
-
-	return cmd.Wait()
+	return errors.Wrapf(cmd.Run(), "failed running server: %s", cmd.Path)
 }

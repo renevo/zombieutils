@@ -103,4 +103,27 @@ server "Burpcraft" {
   mod "lights" {
     url = "https://docs.google.com/uc?export=download&id=1zHMqYkwaBhlP9M0AX6KDbx_CCzyTqBv5"
   }
+
+  mod "burpcraft" {
+    url = "https://github.com/renevo/zombie-a20-burpcraft/archive/refs/heads/main.zip"
+  }
+
+  mod "renevo" {
+    url = "https://github.com/renevo/zombie-a20-renevo/archive/refs/heads/main.zip"
+  }
+
+  mod "sams-working-stuff" {
+    url         = "https://github.com/saminal1/samsmods-a20/archive/refs/heads/main.zip"
+    path_filter = "SWorkingStuff"
+  }
+
+  mod "sams-storage-stuff" {
+    url         = "https://github.com/saminal1/samsmods-a20/archive/refs/heads/main.zip"
+    path_filter = "SStorageStuff"
+  }
+
+  mod "sams-deco-struff" {
+    url         = "https://github.com/saminal1/samsmods-a20/archive/refs/heads/main.zip"
+    path_filter = "SDecoStuff"
+  }
 }

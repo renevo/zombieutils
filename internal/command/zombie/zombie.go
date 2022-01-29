@@ -87,12 +87,20 @@ func New() *cobra.Command {
 			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
 			go func() {
-				<-sigCh
-				logrus.Info("Stopping server...")
+				sig := <-sigCh
+				logrus.Infof("Stopping server... %v", sig)
 				cancel()
 			}()
 
-			return srv.Run(ctx)
+			err := srv.Run(ctx)
+
+			if err != nil {
+				logrus.Infof("Stopped Server: %v", err)
+			} else {
+				logrus.Infof("Stopped Server")
+			}
+
+			return err
 		},
 	})
 
