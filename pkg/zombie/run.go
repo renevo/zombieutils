@@ -29,6 +29,7 @@ func (s *Server) Run(ctx context.Context) error {
 	cmd.Dir = installDirectory
 	cmd.Env = append(cmd.Env, fmt.Sprintf("LD_LIBRARY_PATH=.:%s/7DaysToDieServer_Data/Plugins/x86_64", installDirectory))
 	cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s/GameData", installDirectory))
+	cmd.SysProcAttr = getSysProcAttr()
 
 	stdin := bytes.Buffer{}
 
