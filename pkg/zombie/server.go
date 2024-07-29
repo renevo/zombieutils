@@ -9,21 +9,19 @@ type Server struct {
 	SaveFolder    string `hcl:"save_folder"`
 	AdminFileName string `hcl:"admin_file_name,optional"`
 
-	FixesVersion string `hcl:"server_fixes_version,optional"`
-
-	Admins         []ServerAdmin          `hcl:"admin,block"`
-	Permissions    []ServerPermission     `hcl:"permission,block"`
-	WebPermissions []ServerWebPermission  `hcl:"webpermission,block"`
-	WebTokens      []ServerWebToken       `hcl:"webtoken,block"`
-	Whitelist      []ServerWhitelistEntry `hcl:"whitelist,block"`
-	Mods           []ServerMod            `hcl:"mod,block"`
-	CleanMods      bool                   `hcl:"clean_mods,optional"`
+	Admins      []ServerAdmin          `hcl:"admin,block"`
+	Permissions []ServerPermission     `hcl:"permission,block"`
+	Whitelist   []ServerWhitelistEntry `hcl:"whitelist,block"`
+	Mods        []ServerMod            `hcl:"mod,block"`
+	ModPacks    []ServerModPack        `hcl:"modpack,block"`
+	CleanMods   bool                   `hcl:"clean_mods,optional"`
 }
 
 type ServerAdmin struct {
 	Name       string `hcl:"name,label" xml:"name,attr"`
 	ID         int    `hcl:"id" xml:"steamID,attr"`
 	Permission int    `hcl:"permission" xml:"permission_level,attr"`
+	Platform   string `hcl:"platform" xml:"platform,attr"`
 }
 
 type ServerPermission struct {
@@ -31,20 +29,10 @@ type ServerPermission struct {
 	Level   int    `hcl:"level" xml:"permission_level,attr"`
 }
 
-type ServerWebPermission struct {
-	Module string `hcl:"module,label" xml:"module,attr"`
-	Level  int    `hcl:"level" xml:"permission_level,attr"`
-}
-
-type ServerWebToken struct {
-	Name  string `hcl:"name,label" xml:"name,attr"`
-	Token string `hcl:"token" xml:"token,attr"`
-	Level int    `hcl:"level" xml:"permission_level,attr"`
-}
-
 type ServerWhitelistEntry struct {
-	Name string `hcl:"name,label" xml:"name,attr"`
-	ID   int    `hcl:"id" xml:"steamID,attr"`
+	Name     string `hcl:"name,label" xml:"name,attr"`
+	ID       int    `hcl:"id" xml:"steamID,attr"`
+	Platform string `hcl:"platform" xml:"platform,attr"`
 }
 
 func Default() *Server {
