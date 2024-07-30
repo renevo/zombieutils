@@ -80,22 +80,26 @@ func (s *Server) Install(ctx context.Context) error {
 }
 
 func (s *Server) installAdminConfig(savePath string) error {
-	// TODO:
+	// TODO: should probably read the file for the existing webusers, as they have to be created with `createwebuser` command in game
 	/*
-	  <webusers>
-	    <user name="renevo" pass="<some password thingy here>" platform="Steam" userid="76561197969618392" crossplatform="EOS" crossuserid="000256d97ada456e870e75495a3ee51e" />
-	  </webusers>
+	   INFO[0028] 2024-07-29T19:49:24 1.606 WRN [Web] [Perms] Ignoring user-entry because of missing 'platform' or 'userid' attribute: <user name="Dante" userid="76561197969618392" pass="password" platform="Stream" crossplatform="EOS" crossuserid="000256d97ada456e870e75495a3ee51e" />
+	   INFO[0028] 2024-07-29T19:49:24 1.611 WRN [Web] [Perms] Ignoring apitoken-entry because of missing 'name' attribute: <token token="admin" secret="s3cr3t" permission_level="0" />
 	*/
-
 	adminConfig := struct {
 		XMLName     xml.Name               `xml:"adminTools"`
 		Admins      []ServerAdmin          `xml:"users>user"`
 		Permissions []ServerPermission     `xml:"commands>permission"`
 		Whitelist   []ServerWhitelistEntry `xml:"whitelist>user"`
+		WebUsers    []WebUser              `xml:"webusers>user"`
+		WebModules  []WebModule            `xml:"webmodules>module"`
+		APITokens   []APIToken             `xml:"apitokens>token"`
 	}{
 		Admins:      s.Admins,
 		Permissions: s.Permissions,
 		Whitelist:   s.Whitelist,
+		WebUsers:    s.WebUsers,
+		WebModules:  s.WebModules,
+		APITokens:   s.APITokens,
 	}
 
 	data, err := xml.MarshalIndent(&adminConfig, "", "  ")
@@ -108,6 +112,8 @@ func (s *Server) installAdminConfig(savePath string) error {
 	// gross...
 	data = []byte(strings.ReplaceAll(string(data), "></user>", " />"))
 	data = []byte(strings.ReplaceAll(string(data), "></permission>", " />"))
+	data = []byte(strings.ReplaceAll(string(data), "></module>", " />"))
+	data = []byte(strings.ReplaceAll(string(data), "></token>", " />"))
 
 	// have to save this in multiple locations for some reason
 	saveDirs := []string{

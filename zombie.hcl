@@ -64,4 +64,39 @@ server "Burpcraft" {
   modpack "burpcraft" {
     url = "https://github.com/renevo/burpmod-7days/releases/download/1.0.0/burpcraft-1.0.0.zip"
   }
+
+  webuser "Dante" {
+    id             = "76561197969618392"
+    password       = "password" # this has to come from the config after using createwebuser
+    platform       = "Steam"
+    cross_platform = "EOS"
+    cross_user_id  = "000256d97ada456e870e75495a3ee51e"
+  }
+
+  webmodule "web.map" {
+    permission = 2000
+  }
+
+  webmodule "webapi.Command" {
+    permission = 1000
+    method "GET" {
+      permission = 1000
+    }
+    method "POST" {
+      permission = "inherit"
+    }
+  }
+
+  webmodule "webapi.viewallplayers" {
+    permission = 2000
+  }
+
+  webmodule "webapi.viewallclaims" {
+    permission = 2000
+  }
+
+  webtoken "admin" {
+    permission = 0
+    secret     = "s3cr3t"
+  }
 }
