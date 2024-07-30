@@ -80,6 +80,13 @@ func (s *Server) Install(ctx context.Context) error {
 }
 
 func (s *Server) installAdminConfig(savePath string) error {
+	// TODO:
+	/*
+	  <webusers>
+	    <user name="renevo" pass="<some password thingy here>" platform="Steam" userid="76561197969618392" crossplatform="EOS" crossuserid="000256d97ada456e870e75495a3ee51e" />
+	  </webusers>
+	*/
+
 	adminConfig := struct {
 		XMLName     xml.Name               `xml:"adminTools"`
 		Admins      []ServerAdmin          `xml:"users>user"`
@@ -102,13 +109,23 @@ func (s *Server) installAdminConfig(savePath string) error {
 	data = []byte(strings.ReplaceAll(string(data), "></user>", " />"))
 	data = []byte(strings.ReplaceAll(string(data), "></permission>", " />"))
 
-	saveDir := filepath.Join(savePath, ".local", "share", "7DaysToDie", "Saves")
-
-	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create save directory %q: %w", saveDir, err)
+	// have to save this in multiple locations for some reason
+	saveDirs := []string{
+		filepath.Join(savePath, ".local", "share", "7DaysToDie", "Saves"),
+		filepath.Join(savePath, "Saves"),
 	}
 
-	fileLocation := filepath.Join(saveDir, s.AdminFileName)
+	for _, saveDir := range saveDirs {
+		if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+			return fmt.Errorf("failed to create save directory %q: %w", saveDir, err)
+		}
 
-	return errors.Wrapf(os.WriteFile(fileLocation, data, os.ModePerm), "failed to write admin file %q", fileLocation)
+		fileLocation := filepath.Join(saveDir, s.AdminFileName)
+
+		if err := os.WriteFile(fileLocation, data, os.ModePerm); err != nil {
+			return fmt.Errorf("failed to write admin file %q: %w", fileLocation, err)
+		}
+	}
+
+	return nil
 }
