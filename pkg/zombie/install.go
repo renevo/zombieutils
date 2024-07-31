@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/steam"
-	"github.com/sirupsen/logrus"
 )
 
 func (s *Server) Install(ctx context.Context) error {
@@ -32,7 +32,7 @@ func (s *Server) Install(ctx context.Context) error {
 	// mod path cleaning and creations
 	modPath := filepath.Join(installPath, "Mods")
 	if s.CleanMods {
-		logrus.Infof("Cleaning mod directory")
+		slog.Info("Cleaning mod directory")
 		modPath := filepath.Join(installPath, "Mods")
 		if err := os.RemoveAll(modPath); err != nil {
 			return errors.Wrapf(err, "failed to clean mods folder %q", modPath)
@@ -65,14 +65,14 @@ func (s *Server) Install(ctx context.Context) error {
 	// install mods from places, these are pretty non-standard in the zip files provided to download, but most are git repositories
 	for _, mod := range s.Mods {
 		if err := mod.Install(ctx, modPath); err != nil {
-			logrus.Errorf("Failed to install mod %q: %v", mod.Name, err)
+			slog.Error("Failed to install mod", "mod", mod.Name, "err", err)
 		}
 	}
 
 	// install modpacks
 	for _, modpack := range s.ModPacks {
 		if err := modpack.Install(ctx, modPath); err != nil {
-			logrus.Errorf("Failed to install modpack %q: %v", modpack.Name, err)
+			slog.Error("Failed to install modpack", "modpack", modpack.Name, "err", err)
 		}
 	}
 

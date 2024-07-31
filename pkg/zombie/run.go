@@ -10,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/logutil"
-	"github.com/sirupsen/logrus"
 )
 
 func (s *Server) Run(ctx context.Context) error {
@@ -34,8 +33,8 @@ func (s *Server) Run(ctx context.Context) error {
 	stdin := bytes.Buffer{}
 
 	cmd.Stdin = &stdin
-	cmd.Stdout = logutil.Writer(logrus.Info)
-	cmd.Stderr = logutil.Writer(logrus.Error)
+	cmd.Stdout = logutil.Writer{}
+	cmd.Stderr = logutil.Writer{IsErr: true}
 
 	go func() {
 		<-ctx.Done()

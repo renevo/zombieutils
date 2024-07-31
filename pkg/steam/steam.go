@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/logutil"
-	"github.com/sirupsen/logrus"
 )
 
 type Game struct {
@@ -41,8 +40,8 @@ func (g Game) Install(steamcmd, installPath string) error {
 	cmd.Dir = installPath
 
 	cmd.Stdin = os.Stdin
-	cmd.Stdout = logutil.Writer(logrus.Info)
-	cmd.Stderr = logutil.Writer(logrus.Error)
+	cmd.Stdout = logutil.Writer{}
+	cmd.Stderr = logutil.Writer{IsErr: true}
 
 	return errors.Wrapf(cmd.Run(), "failed to install steam game %d", g.ID)
 }

@@ -2,6 +2,7 @@ package zombie
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,7 +10,6 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/zombie"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -51,7 +51,7 @@ func New() *cobra.Command {
 				return err
 			}
 
-			logrus.Info("Validated server configuration")
+			slog.Info("Validated server configuration")
 			return nil
 		},
 	})
@@ -88,16 +88,16 @@ func New() *cobra.Command {
 
 			go func() {
 				sig := <-sigCh
-				logrus.Infof("Stopping server... %v", sig)
+				slog.Info("Stopping server", "signal", sig)
 				cancel()
 			}()
 
 			err := srv.Run(ctx)
 
 			if err != nil {
-				logrus.Infof("Stopped Server: %v", err)
+				slog.Info("Stopped Server", "err", err)
 			} else {
-				logrus.Infof("Stopped Server")
+				slog.Info("Stopped Server")
 			}
 
 			return err

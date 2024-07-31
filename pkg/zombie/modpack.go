@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,7 +13,6 @@ import (
 
 	cleanhttp "github.com/hashicorp/go-cleanhttp"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type ServerModPack struct {
@@ -69,7 +69,7 @@ func (sm *ServerModPack) Install(ctx context.Context, modPath string) error {
 			return errors.Wrapf(err, "failed to create directory %q", filepath.Dir(fullPath))
 		}
 
-		logrus.Infof("Installing Modpack File To %q", fullPath)
+		slog.Info("Installing Modpack File", "path", fullPath)
 		data, err := readZipFile(file)
 		if err != nil {
 			return errors.Wrapf(err, "failed to read zipped file %q", file.Name)

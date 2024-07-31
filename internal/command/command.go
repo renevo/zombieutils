@@ -1,10 +1,13 @@
 package command
 
 import (
+	"log/slog"
 	"os"
 
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 	"github.com/renevo/zombieutils/internal/command/zombie"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -17,23 +20,28 @@ func Execute(args []string) error {
 		Use:   "zombieutils",
 		Short: "7 Days To Die Utilities",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			logrus.SetOutput(os.Stdout)
+			// logger setup
+			var logLeveler slog.LevelVar
+			var logHandler slog.Handler
+			logOutput := os.Stdout
 
-			if jsonLogging {
-				logrus.SetFormatter(&logrus.JSONFormatter{})
-			} else {
-				logrus.SetFormatter(&logrus.TextFormatter{
-					DisableColors: nocolorLogging,
+			switch {
+			case jsonLogging:
+				logHandler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: &logLeveler})
+			case nocolorLogging:
+				logHandler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: &logLeveler})
+			default:
+				logHandler = tint.NewHandler(colorable.NewColorable(logOutput), &tint.Options{
+					Level:   &logLeveler,
+					NoColor: !isatty.IsTerminal(logOutput.Fd()),
 				})
 			}
 
 			if verboseLogging {
-				logrus.SetLevel(logrus.DebugLevel)
-			} else {
-				logrus.SetLevel(logrus.InfoLevel)
+				logLeveler.Set(slog.LevelDebug)
 			}
 
-			logrus.WithField("command", cmd.Use).Debug("Command PersistentPreRunE")
+			slog.SetDefault(slog.New(logHandler))
 
 			return nil
 		},
