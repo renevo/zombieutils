@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/steam"
 )
 
@@ -22,11 +21,11 @@ func (s *Server) Install(ctx context.Context) error {
 
 	installPath, err := filepath.Abs(filepath.FromSlash(s.Path))
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve install directory %q", s.Path)
+		return fmt.Errorf("failed to resolve install directory %q: %w", s.Path, err)
 	}
 
 	if err := os.MkdirAll(installPath, os.ModePerm); err != nil {
-		return errors.Wrapf(err, "failed to create install directory: %q", installPath)
+		return fmt.Errorf("failed to create install directory: %q: %w", installPath, err)
 	}
 
 	// mod path cleaning and creations
@@ -35,31 +34,31 @@ func (s *Server) Install(ctx context.Context) error {
 		slog.Info("Cleaning mod directory")
 		modPath := filepath.Join(installPath, "Mods")
 		if err := os.RemoveAll(modPath); err != nil {
-			return errors.Wrapf(err, "failed to clean mods folder %q", modPath)
+			return fmt.Errorf("failed to clean mods folder %q: %w", modPath, err)
 		}
 	}
 
 	if err := os.MkdirAll(modPath, os.ModePerm); err != nil {
-		return errors.Wrapf(err, "failed to create mod directory: %q", modPath)
+		return fmt.Errorf("failed to create mod directory: %q: %w", modPath, err)
 	}
 
 	// install the server (will add TFP mods back in)
 	if err := g.Install(s.Steam, installPath); err != nil {
-		return errors.Wrapf(err, "failed to install zombie game to %q", s.Path)
+		return fmt.Errorf("failed to install zombie game to %q: %w", s.Path, err)
 	}
 
 	// create the save path
 	savePath, err := filepath.Abs(filepath.FromSlash(s.SaveFolder))
 	if err != nil {
-		return errors.Wrapf(err, "failed to resolve save directory %q", s.SaveFolder)
+		return fmt.Errorf("failed to resolve save directory %q: %w", s.SaveFolder, err)
 	}
 	if err := os.MkdirAll(savePath, os.ModePerm); err != nil {
-		return errors.Wrapf(err, "failed to create save directory: %q", savePath)
+		return fmt.Errorf("failed to create save directory: %q: %w", savePath, err)
 	}
 
 	// install admin config
 	if err := s.installAdminConfig(savePath); err != nil {
-		return errors.Wrapf(err, "failed to install admin.xml to %q", s.SaveFolder)
+		return fmt.Errorf("failed to install admin.xml to %q: %w", s.SaveFolder, err)
 	}
 
 	// install mods from places, these are pretty non-standard in the zip files provided to download, but most are git repositories
@@ -104,7 +103,7 @@ func (s *Server) installAdminConfig(savePath string) error {
 
 	data, err := xml.MarshalIndent(&adminConfig, "", "  ")
 	if err != nil {
-		return errors.Wrapf(err, "failed to marshal %q", s.AdminFileName)
+		return fmt.Errorf("failed to marshal %q: %w", s.AdminFileName, err)
 	}
 
 	data = append([]byte(xml.Header), data...)

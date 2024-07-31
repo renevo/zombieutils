@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/logutil"
 )
 
@@ -41,5 +40,9 @@ func (s *Server) Run(ctx context.Context) error {
 		_ = cmd.Process.Signal(syscall.SIGINT)
 	}()
 
-	return errors.Wrapf(cmd.Run(), "failed running server: %s", cmd.Path)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed running server: %s: %w", cmd.Path, err)
+	}
+
+	return nil
 }

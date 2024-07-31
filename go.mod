@@ -10,7 +10,6 @@ require (
 	github.com/lmittmann/tint v1.0.5
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-isatty v0.0.20
-	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 )
 

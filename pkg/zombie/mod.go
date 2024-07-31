@@ -4,6 +4,8 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,7 +14,6 @@ import (
 	"strings"
 
 	cleanhttp "github.com/hashicorp/go-cleanhttp"
-	"github.com/pkg/errors"
 )
 
 type ServerMod struct {
@@ -34,19 +35,19 @@ func (sm *ServerMod) Install(ctx context.Context, modPath string) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "failed to download mod")
+		return fmt.Errorf("failed to download mod: %w", err)
 	}
 
 	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, "failed to read mod")
+		return fmt.Errorf("failed to read mod: %w", err)
 	}
 
 	zw, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
-		return errors.Wrap(err, "mod not a valid zip file")
+		return fmt.Errorf("mod not a valid zip file: %w", err)
 	}
 
 	trimDir := ""
@@ -83,23 +84,23 @@ func (sm *ServerMod) Install(ctx context.Context, modPath string) error {
 
 		if file.FileInfo().IsDir() {
 			if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
-				return errors.Wrapf(err, "failed to create directory %q", fullPath)
+				return fmt.Errorf("failed to create directory %q: %w", fullPath, err)
 			}
 			continue
 		}
 
 		if err := os.MkdirAll(filepath.Dir(fullPath), os.ModePerm); err != nil {
-			return errors.Wrapf(err, "failed to create directory %q", filepath.Dir(fullPath))
+			return fmt.Errorf("failed to create directory %q: %w", filepath.Dir(fullPath), err)
 		}
 
 		slog.Info("Installing Mod File", "path", fullPath)
 		data, err := readZipFile(file)
 		if err != nil {
-			return errors.Wrapf(err, "failed to read zipped file %q", file.Name)
+			return fmt.Errorf("failed to read zipped file %q: %w", file.Name, err)
 		}
 
 		if err := os.WriteFile(fullPath, data, os.ModePerm); err != nil {
-			return errors.Wrapf(err, "failed to write zipped file %q", fullPath)
+			return fmt.Errorf("failed to write zipped file %q: %w", fullPath, err)
 		}
 	}
 

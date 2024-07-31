@@ -2,13 +2,14 @@ package zombie
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/hashicorp/hcl/v2/hclsimple"
-	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/zombie"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,7 @@ func New() *cobra.Command {
 	loadConfig := func() error {
 		if len(configFile) > 0 {
 			if err := hclsimple.DecodeFile(configFile, nil, &serverConfig); err != nil {
-				return errors.Wrap(err, "failed to parse config file")
+				return fmt.Errorf("failed to parse config file: %w", err)
 			}
 
 			if len(serverConfig.Server) != 1 {

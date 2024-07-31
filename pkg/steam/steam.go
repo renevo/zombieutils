@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/pkg/errors"
 	"github.com/renevo/zombieutils/pkg/logutil"
 )
 
@@ -43,5 +42,9 @@ func (g Game) Install(steamcmd, installPath string) error {
 	cmd.Stdout = logutil.Writer{}
 	cmd.Stderr = logutil.Writer{IsErr: true}
 
-	return errors.Wrapf(cmd.Run(), "failed to install steam game %d", g.ID)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to install steam game %d: %w", g.ID, err)
+	}
+
+	return nil
 }
