@@ -7,9 +7,11 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/hashicorp/hcl/v2/hclsimple"
+	"github.com/renevo/zombieutils/internal/discord"
 	"github.com/renevo/zombieutils/pkg/zombie"
 	"github.com/spf13/cobra"
 )
@@ -84,6 +86,20 @@ func New() *cobra.Command {
 				return err
 			}
 
+			gmsgs := make(chan string, 100)
+			messenger, err := discord.New()
+			if err != nil {
+				return fmt.Errorf("failed to create discord messager: %w", err)
+			}
+			defer messenger.Close()
+
+			messagerWG := sync.WaitGroup{}
+			messagerWG.Add(1)
+			go func() {
+				messenger.Publish(gmsgs)
+				messagerWG.Done()
+			}()
+
 			sigCh := make(chan os.Signal, 2)
 			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
@@ -93,13 +109,15 @@ func New() *cobra.Command {
 				cancel()
 			}()
 
-			err := srv.Run(ctx)
-
-			if err != nil {
+			if err = srv.Run(ctx, gmsgs); err != nil {
 				slog.Info("Stopped Server", "err", err)
 			} else {
 				slog.Info("Stopped Server")
 			}
+
+			// close and drain messages to discord
+			close(gmsgs)
+			messagerWG.Wait()
 
 			return err
 		},

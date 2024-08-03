@@ -8,7 +8,8 @@ import (
 )
 
 type Writer struct {
-	IsErr bool
+	IsErr              bool
+	GlobalMessagesChan chan<- string
 }
 
 // 2024-07-31T14:33:47 54.462 INF
@@ -75,6 +76,7 @@ func (l Writer) Write(b []byte) (int, error) {
 			// noisy shit that doesn't matter for our server
 			if strings.HasPrefix(msg, "Shader") ||
 				strings.HasPrefix(msg, "#pragma") ||
+				strings.Contains(msg, "failed to create symbolic link") ||
 				strings.Contains(msg, "There is no texture data available to upload.") ||
 				strings.Contains(msg, ", you may have forgotten turning Fallback off?") ||
 				strings.Contains(msg, "shader is not supported on this GPU") ||
@@ -89,6 +91,11 @@ func (l Writer) Write(b []byte) (int, error) {
 			}
 
 			lineOutputFn(msg)
+
+			// GMSG: Player 'RenEvo' left the game
+			if l.GlobalMessagesChan != nil && strings.HasPrefix(msg, "GMSG:") {
+				l.GlobalMessagesChan <- strings.TrimSpace(strings.TrimPrefix(msg, "GMSG:"))
+			}
 		}
 
 	ADVANCE:

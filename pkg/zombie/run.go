@@ -11,7 +11,7 @@ import (
 	"github.com/renevo/zombieutils/pkg/logutil"
 )
 
-func (s *Server) Run(ctx context.Context) error {
+func (s *Server) Run(ctx context.Context, gmsgs chan<- string) error {
 	installDirectory, _ := filepath.Abs(filepath.FromSlash(s.Path))
 	configFile, _ := filepath.Abs(filepath.FromSlash(s.Config))
 	args := []string{
@@ -32,8 +32,8 @@ func (s *Server) Run(ctx context.Context) error {
 	stdin := bytes.Buffer{}
 
 	cmd.Stdin = &stdin
-	cmd.Stdout = logutil.Writer{}
-	cmd.Stderr = logutil.Writer{IsErr: true}
+	cmd.Stdout = logutil.Writer{GlobalMessagesChan: gmsgs}
+	cmd.Stderr = logutil.Writer{GlobalMessagesChan: gmsgs, IsErr: true}
 
 	go func() {
 		<-ctx.Done()

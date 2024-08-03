@@ -6,9 +6,12 @@ import (
 	"strings"
 
 	"github.com/renevo/zombieutils/internal/command"
+	"github.com/subosito/gotenv"
 )
 
 func main() {
+	gotenv.Load()
+
 	if err := command.Execute(os.Args[1:]); err != nil {
 		// kinda hacky, but only way to get around the double error message from cobra
 		if strings.Contains(err.Error(), "unknown command") {
