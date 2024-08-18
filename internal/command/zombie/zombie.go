@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/renevo/zombieutils/internal/discord"
@@ -92,6 +93,30 @@ func New() *cobra.Command {
 				return fmt.Errorf("failed to create discord messager: %w", err)
 			}
 			defer messenger.Close()
+
+			api := zombie.NewAPI()
+			go func(ctx context.Context) {
+				t := time.NewTicker(time.Minute)
+				defer t.Stop()
+
+				for {
+					select {
+					case <-ctx.Done():
+						return
+
+					case <-t.C:
+						stats, err := api.ServerStats()
+						if err != nil {
+							slog.Error("Failed to get server stats", "err", err)
+							continue
+						}
+
+						if err := messenger.UpdateStatus(stats); err != nil {
+							slog.Error("Failed to update discord status", "err", err)
+						}
+					}
+				}
+			}(ctx)
 
 			messagerWG := sync.WaitGroup{}
 			messagerWG.Add(1)

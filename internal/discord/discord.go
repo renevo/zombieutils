@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/renevo/zombieutils/pkg/zombie"
 )
 
 type Discord struct {
@@ -13,6 +15,7 @@ type Discord struct {
 	channelID string
 	token     string
 	session   *discordgo.Session
+	lastStats zombie.ServerStats
 }
 
 func New() (*Discord, error) {
@@ -32,9 +35,10 @@ func New() (*Discord, error) {
 	}
 
 	session.Identify.Intents = discordgo.IntentGuildMessages
+	session.Identify.Presence.Status = string(discordgo.StatusOnline)
 
 	session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		slog.Info("Discord logged in as: %s#%s", s.State.User.Username, s.State.User.Discriminator)
+		slog.Info("Discord logged in as: " + fmt.Sprintf("%s#%s", s.State.User.Username, s.State.User.Discriminator))
 	})
 	session.AddHandler(d.handleMessage)
 
@@ -46,7 +50,30 @@ func New() (*Discord, error) {
 
 	slog.Info("Connected to discord")
 
+	_ = d.session.UpdateStatusComplex(discordgo.UpdateStatusData{
+		AFK:    false,
+		Status: string(discordgo.StatusIdle),
+	})
+
 	return d, nil
+}
+
+func (d *Discord) UpdateStatus(stats zombie.ServerStats) error {
+	if d.session == nil {
+		return nil
+	}
+
+	idle := 0
+	previousDuration := d.lastStats.Duration()
+	currentDuration := stats.Duration()
+
+	if previousDuration == currentDuration {
+		idle = int(time.Since(d.lastStats.Timestamp).Seconds())
+	} else {
+		d.lastStats = stats
+	}
+
+	return d.session.UpdateGameStatus(idle, stats.String())
 }
 
 func (d *Discord) Publish(msgs <-chan string) {
@@ -90,6 +117,11 @@ func (d *Discord) Close() error {
 	if d.session == nil {
 		return nil
 	}
+
+	_ = d.session.UpdateStatusComplex(discordgo.UpdateStatusData{
+		AFK:    false,
+		Status: string(discordgo.StatusOffline),
+	})
 
 	return d.session.Close()
 }
