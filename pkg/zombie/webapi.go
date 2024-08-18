@@ -26,8 +26,8 @@ type API struct {
 func NewAPI() *API {
 	return &API{
 		Addr:           cmp.Or(os.Getenv("SDTD_API_ADDR"), "https://7days.burpcraft.com"),
-		ApiTokenName:   os.Getenv("STDT_API_TOKEN_NAME"),
-		ApiTokenSecret: os.Getenv("STDT_API_TOKEN_SECRET"),
+		ApiTokenName:   os.Getenv("SDTD_API_TOKEN_NAME"),
+		ApiTokenSecret: os.Getenv("SDTD_API_TOKEN_SECRET"),
 		client:         cleanhttp.DefaultClient(),
 	}
 }
